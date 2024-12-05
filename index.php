@@ -1,72 +1,94 @@
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
-//• لا تنسى ذكر حقوق المطور توم
-//• المطور ↦ @T_0_M0 ↤
-//• قناة المطور ↦ @izeoe ↤
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
 <?php
-ob_start();
-error_reporting(0);
+// إعدادات عرض الأخطاء
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 define("API_KEY", '7361470544:AAEitqyfPIq2BFP33Hq38D6J3MxYxV40Q2I');
-function bot($method, $datas = []) {
-    $url = "https://api.telegram.org/bot" . API_KEY . "/$method";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $datas);
-    $res = curl_exec($ch);
-    if (curl_error($ch)) {
-        var_dump(curl_error($ch));
+
+class TelegramBot {
+    private $apiKey;
+
+    public function __construct($apiKey) {
+        $this->apiKey = $apiKey;
     }
-    return json_decode($res);
+
+    public function sendMessage($chatId, $text, $markup = null) {
+        $url = "https://api.telegram.org/bot" . $this->apiKey . "/sendMessage";
+        $data = [
+            'chat_id' => $chatId,
+            'text' => $text,
+            'parse_mode' => 'Markdown',
+            'reply_markup' => $markup ? json_encode($markup) : null
+        ];
+        return $this->makeRequest($url, $data);
+    }
+
+    public function sendPhoto($chatId, $photo, $caption, $markup = null) {
+        $url = "https://api.telegram.org/bot" . $this->apiKey . "/sendPhoto";
+        $data = [
+            'chat_id' => $chatId,
+            'photo' => $photo,
+            'caption' => $caption,
+            'parse_mode' => 'Markdown',
+            'reply_markup' => $markup ? json_encode($markup) : null
+        ];
+        return $this->makeRequest($url, $data);
+    }
+
+    private function makeRequest($url, $data) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        $res = curl_exec($ch);
+        if (curl_errno($ch)) {
+            error_log('Curl error: ' . curl_error($ch));
+            return null;
+        }
+        curl_close($ch);
+        return json_decode($res, true);
+    }
 }
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
 
-//• هنا تكدر تخلي لوحه ادمن الي تعجبك 
-
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
+$bot = new TelegramBot(API_KEY);
 $input = file_get_contents("php://input");
-$update = json_decode($input, TRUE);
+$update = json_decode($input, true);
+
 $chatId = $update['message']['chat']['id'];
 $text = $update['message']['text'];
 
 if ($text == '/start') {
-bot('sendMessage', [
-'chat_id' => $chatId,
-'text' => '*• اهلا بك عزيزي في بوت الذكاء الاصطناعي
+    $markup = [
+        'inline_keyboard' => [
+            [['text' => "• مطور البوت •", 'url' => "https://t.me/T_0_M0"], ['text' => "• قناة البوت •", 'url' => "https://t.me/izeoe"]]
+        ]
+    ];
+    $welcomeMessage = "*• اهلا بك عزيزي في بوت الذكاء الاصطناعي
 • أنا GPT AI ، تم تدريبه باستخدام تقنية الذكاء الاصطناعي 
 • لتوفير الإجابات والمحادثات للمستخدمين 
-• في مختلف المواضيع والمجالا
+• في مختلف المواضيع والمجالات
 • اكدر اساعدك بشيء ؟ 
 • لصنع صور بالذكاء الاصطناعي ارسل /image بعدها النص الذي تريده *
 ```مثال
 /image cat```
 *• لكتابه على ورقه بيضاء نص ارسل /Write بعدها النص الذي تريد كتابته في ورقه*
 ```مثال
-/Write cat```',
-'parse_mode' => "Markdown",
-'disable_web_page_preview' => true,
-'reply_markup' => json_encode([
-'inline_keyboard' => [
-[['text' => "• مطور البوت •", 'url' => "https://t.me/T_0_M0"],
-['text' => "• قناة البوت •", 'url' => "https://t.me/izeoe"]]
-]
-])
-]);
-return;
+/Write cat```";
+    $bot->sendMessage($chatId, $welcomeMessage, $markup);
+    return;
 }
+
 if (strpos($text, '/image ') === 0) {
     $description = substr($text, 7);
+    $markup = [
+        'inline_keyboard' => [
+            [['text' => "• مطور البوت •", 'url' => "https://t.me/T_0_M0"], ['text' => "• قناة البوت •", 'url' => "https://t.me/izeoe"]]
+        ]
+    ];
 
-    $waitingMessage = bot('sendMessage', [
-        'chat_id' => $chatId,
-        'text' => "*• جار انشاء صورة حسب وصفك ↤ $description*",
-        'parse_mode' => 'Markdown',
-        'reply_markup' => json_encode([
-            'inline_keyboard' => [
-                [['text' => "• مطور البوت •", 'url' => "https://t.me/T_0_M0"],['text' => "• قناة البوت •", 'url' => "https://t.me/izeoe"]]
-            ]
-        ])
-    ]);
+    $waitingMessage = $bot->sendMessage($chatId, "*• جار انشاء صورة حسب وصفك ↤ $description*", $markup);
 
     $api = 'http://art.nowtechai.com/art?name=' . urlencode($description);
     $headers = [
@@ -80,77 +102,40 @@ if (strpos($text, '/image ') === 0) {
             "header" => implode("\r\n", $headers)
         ]
     ]);
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
-//• لا تنسى ذكر حقوق المطور توم
-//• المطور ↦ @T_0_M0 ↤
-//• قناة المطور ↦ @izeoe ↤
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
+
     $response = @file_get_contents($api, false, $context);
-
-    if ($response !== FALSE) {
+    if ($response !== false) {
         $data = json_decode($response, true);
-
         if ($data && isset($data['code']) && $data['code'] == 200 && !empty($data['data']) && isset($data['data'][0]['img_url'])) {
             $imageData = $data['data'][0];
-
             sleep(1);
 
-            bot('deleteMessage', [
-                'chat_id' => $chatId,
-                'message_id' => $waitingMessage['result']['message_id']
-            ]);
-
-            bot('sendPhoto', [
-                'chat_id' => $chatId,
-                'photo' => $imageData['img_url'],
-                'caption' => "*• تم انشاء الصورة بنجاح ✅ .\n• وصف الصورة ↤ $description*",
-                'parse_mode' => 'Markdown',
-                'reply_markup' => json_encode([
-                    'inline_keyboard' => [
-                        [['text' => "• مطور البوت •", 'url' => "https://t.me/T_0_M0"],['text' => "• قناة البوت •", 'url' => "https://t.me/izeoe"]]
-                    ]
-                ])
-            ]);
+            $bot->sendPhoto($chatId, $imageData['img_url'], "*• تم انشاء الصورة بنجاح ✅ .\n• وصف الصورة ↤ $description*", $markup);
+            $bot->sendMessage($chatId, "*• الصورة تم إنشاؤها بنجاح.*", $markup);
             exit;
         } else {
-            bot('sendMessage', [
-                'chat_id' => $chatId,
-                'text' => "*• لم يتم العثور على الصورة .*",
-                'parse_mode' => 'Markdown'
-            ]);
+            $bot->sendMessage($chatId, "*• لم يتم العثور على الصورة.*", $markup);
             exit;
         }
     } else {
-        bot('sendMessage', [
-            'chat_id' => $chatId,
-            'text' => "*• حدث خطأ أثناء إنشاء الصورة ، الرجاء إدخال وصف واضح ومفهوم .*",
-            'parse_mode' => 'Markdown'
-        ]);
+        $bot->sendMessage($chatId, "*• حدث خطأ أثناء إنشاء الصورة ، الرجاء إدخال وصف واضح ومفهوم.*", $markup);
         exit;
     }
 }
 
 if (strpos($text, '/Write ') === 0) {
     $textToWrite = substr($text, 7);
-    bot('sendPhoto', [
-        'chat_id' => $chatId,
-        'photo' => "https://apis.xditya.me/write?text=" . urlencode($textToWrite),
-        'caption' => "`$textToWrite`",
-        'parse_mode' => "Markdown",
-        'reply_markup' => json_encode([
-            'inline_keyboard' => [
-                [['text' => "• مطور البوت •", 'url' => "https://t.me/T_0_M0"],['text' => "• قناة البوت •", 'url' => "https://t.me/izeoe"]]
-            ]
-        ])
-    ]);
+    $photoUrl = "https://apis.xditya.me/write?text=" . urlencode($textToWrite);
+    $markup = [
+        'inline_keyboard' => [
+            [['text' => "• مطور البوت •", 'url' => "https://t.me/T_0_M0"], ['text' => "• قناة البوت •", 'url' => "https://t.me/izeoe"]]
+        ]
+    ];
+    $bot->sendPhoto($chatId, $photoUrl, "`$textToWrite`", $markup);
     exit;
 }
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
-//• لا تنسى ذكر حقوق المطور توم
-//• المطور ↦ @T_0_M0 ↤
-//• قناة المطور ↦ @izeoe ↤
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
-sendApiResponse($chatId, $text);
+
+// إرسال استجابة API خارجية
 function sendApiResponse($chatId, $message) {
     $apiUrl = "https://chatai.aritek.app/stream";
     $payload = json_encode([
@@ -184,27 +169,8 @@ function sendApiResponse($chatId, $message) {
             }
         }
     }
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
-//• لا تنسى ذكر حقوق المطور توم
-//• المطور ↦ @T_0_M0 ↤
-//• قناة المطور ↦ @izeoe ↤
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
-$waitingMessage = bot('sendMessage', [
-'chat_id' => $chatId,
-'text' => "*• انتظر من فضلك ⏱️*",
-'parse_mode' => 'Markdown'
-]);    
-$message_id = $waitingMessage->result->message_id;
-bot('editMessageText', [
-'chat_id' => $chatId,
-'message_id' => $message_id,
-'text' => !empty($response_parts) ? $response_parts : 'لم أتمكن من الحصول على رد.',
-'parse_mode' => "markdown"
-]);
+    $waitingMessage = $bot->sendMessage($chatId, "*• انتظر من فضلك ⏱️*", ['parse_mode' => 'Markdown']);
+    $message_id = $waitingMessage['result']['message_id'];
+    $bot->sendMessage($chatId, !empty($response_parts) ? $response_parts : 'لم أتمكن من الحصول على رد.', ['parse_mode' => "markdown"]);
 }
 ?>
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
-//• لا تنسى ذكر حقوق المطور توم
-//• المطور ↦ @T_0_M0 ↤
-//• قناة المطور ↦ @izeoe ↤
-//𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳𓏳
